@@ -18,10 +18,28 @@ st.markdown("""
 
         .stApp {
             background: #0a0a0a;
+            overflow-y: hidden; /* This line prevents vertical scrolling */
         }
         
-        .st-emotion-cache-z5fcl4 { padding-top: 0rem; }
-        h1 { margin-top: 0rem; }
+        /* Specific rules to remove top space and align */
+        .st-emotion-cache-z5fcl4 { 
+            padding-top: 0rem; /* Ensures no padding at the very top of the main content area */
+            
+        }
+        h1 { 
+             font-size: 1em;
+            margin-top: 0rem; /* Removes default top margin from the main title */
+            padding-top: 0rem; /* Ensures no padding at the top of the main title */
+        }
+        /* Further adjustments for potential container spacing */
+        .block-container {
+            padding-top: 0rem;
+            padding-left: 1rem; /* Adjust as needed */
+            padding-right: 1rem; /* Adjust as needed */
+            padding-bottom: 0rem;
+        }
+        
+
 
         h1, h2, h3, h4, h5, h6 {
             color: #f0f0f0;
@@ -35,7 +53,7 @@ st.markdown("""
             font-weight: 900;
             color: #4dc2ff;
             margin-right: 15px;
-            font-size: 1.2em;
+            font-size: 1em;
             vertical-align: middle;
         }
 
@@ -308,9 +326,9 @@ else:
                 st.rerun()
         if st.session_state.recommendations:
             st.markdown("---")
-            cols = st.columns(4) 
+            cols = st.columns(5)  # Changed from 4 to 5 columns
             for idx, movie in enumerate(st.session_state.recommendations):
-                with cols[idx % 4]:
+                with cols[idx]:  # Use idx directly instead of idx % 4
                     genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
                     st.markdown(f"""
                         <div class="movie-card">
@@ -331,24 +349,29 @@ else:
         st.markdown("<h2 class='icon-trending'>Trending Movies This Week</h2>", unsafe_allow_html=True)
         trending_movies = fetch_trending_movies()
         if trending_movies:
-            cols = st.columns(4) 
-            for idx, movie in enumerate(trending_movies[:10]):
-                with cols[idx % 4]:
-                    genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
-                    st.markdown(f"""
-                        <div class="movie-card">
-                            <img src="{movie['poster']}" alt="{movie['title']} poster">
-                            <div class="movie-overlay">
-                                <div class="movie-title-overlay">{movie['title']}</div>
-                                <div class="movie-rating-overlay">
-                                    {"⭐" * int(round(movie['rating'] / 2))} ({movie['rating']:.1f}/10)
+            # Create two rows of 5 columns each for the 10 trending movies
+            for row in range(2):
+                cols = st.columns(5)
+                for col in range(5):
+                    idx = row * 5 + col
+                    if idx < len(trending_movies[:10]):
+                        movie = trending_movies[idx]
+                        with cols[col]:
+                            genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
+                            st.markdown(f"""
+                                <div class="movie-card">
+                                    <img src="{movie['poster']}" alt="{movie['title']} poster">
+                                    <div class="movie-overlay">
+                                        <div class="movie-title-overlay">{movie['title']}</div>
+                                        <div class="movie-rating-overlay">
+                                            {"⭐" * int(round(movie['rating'] / 2))} ({movie['rating']:.1f}/10)
+                                        </div>
+                                        {genres_html if genres_html else ""}
+                                    </div>
                                 </div>
-                                {genres_html if genres_html else ""}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("ℹ️", key=f"trending_info_button_{idx}"):
-                        details = fetch_movie_details(movie['id'])
-                        if details:
-                            st.session_state.selected_detail = details
-                            st.rerun()
+                            """, unsafe_allow_html=True)
+                            if st.button("ℹ️", key=f"trending_info_button_{idx}"):
+                                details = fetch_movie_details(movie['id'])
+                                if details:
+                                    st.session_state.selected_detail = details
+                                    st.rerun()
