@@ -190,7 +190,7 @@ except FileNotFoundError:
     st.error("Model files not found. Please ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are in the correct directory.")
     st.stop()
 
-API_KEY = "88f53bd0012ece4f356be2f1b12ea7ee" 
+API_KEY = st.secrets["TMDB_API_KEY"]
 
 # --- Fetch functions (unchanged) ---
 @st.cache_data(show_spinner=False)
