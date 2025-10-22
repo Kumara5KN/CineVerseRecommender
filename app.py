@@ -3,10 +3,11 @@ import pickle
 import requests
 import pandas as pd
 import random 
+import time # Import time for placeholder loading
 
 st.set_page_config(layout="wide", page_title="CineVerse", page_icon="🎬")
 
-# --- CSS STYLES (Removed selected movie from nav bar, always show details) ---
+# --- CSS STYLES (Your existing styles are kept here for consistency) ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
@@ -488,22 +489,26 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- GLOBAL VARIABLES & CACHING ---
-try:
-    # IMPORTANT: Ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are available
-    movies = pickle.load(open('artifacts/movie_list.pkl', 'rb'))
-    similarity = pickle.load(open('artifacts/similarity.pkl', 'rb'))
-except FileNotFoundError:
-    st.error("Model files not found. Please ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are in the correct directory.")
-    st.stop()
-except Exception as e:
-    st.error(f"Error loading model files: {e}")
-    st.stop()
+@st.cache_data(show_spinner="Loading Model Data...")
+def load_data():
+    """Loads and caches the large model files only once."""
+    try:
+        movies = pickle.load(open('artifacts/movie_list.pkl', 'rb'))
+        similarity = pickle.load(open('artifacts/similarity.pkl', 'rb'))
+        return movies, similarity
+    except FileNotFoundError:
+        st.error("Model files not found. Please ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are in the correct directory.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error loading model files: {e}")
+        st.stop()
+
+movies, similarity = load_data()
 
 try:
     API_KEY = st.secrets["TMDB_API_KEY"]
 except KeyError:
-    # Use a dummy key if secrets is unavailable for local testing, API calls will fail gracefully
-    # If deploying, you MUST set the TMDB_API_KEY secret.
+    st.warning("TMDB_API_KEY not found in st.secrets. API calls may fail.")
     API_KEY = "dummy_api_key_for_no_secret" 
 
 # --- TMDB Genre Mapping ---
@@ -518,12 +523,12 @@ GENRES_TO_DISPLAY = {
 }
 
 # --- Fetch functions ---
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=3600) # Cache API data for 1 hour
 def fetch_movie_details(movie_id):
     """Fetches full movie details including credits and trailer."""
+    # Ensure movie_id is a single integer/string
     if isinstance(movie_id, (pd.Series, pd.DataFrame)):
         try:
-            # Handle cases where the input is a DataFrame/Series slice instead of a direct ID
             movie_id = movie_id.iloc[0]['movie_id']
         except:
             return None
@@ -566,7 +571,28 @@ def fetch_movie_details(movie_id):
     except Exception:
         return None
 
-@st.cache_data(show_spinner=False)
+# Optimization 1: Cache the recommendation results
+@st.cache_data(show_spinner="Calculating Recommendations...")
+def recommend(movie_title, movies_df, similarity_matrix):
+    try:
+        index = movies_df[movies_df['title'] == movie_title].index[0]
+        distances = sorted(list(enumerate(similarity_matrix[index])), reverse=True, key=lambda x: x[1])[1:]
+    except IndexError:
+        return []
+    
+    recs = []
+    for i in distances:
+        movie_id = movies_df.iloc[i[0]].movie_id
+        # Call the cached TMDB fetch function
+        details = fetch_movie_details(movie_id) 
+        if details and details["poster"]:
+            recs.append(details)
+        if len(recs) == 5:
+            break
+    return recs
+
+# Optimization 2: Cache the Trending/Genre fetches (They are slow API calls)
+@st.cache_data(show_spinner="Fetching Top Trending...", ttl=3600)
 def fetch_top_trending_movies(limit=5):
     """Fetches and processes full details for the top N overall trending movies."""
     try:
@@ -577,21 +603,20 @@ def fetch_top_trending_movies(limit=5):
         for movie_summary in data.get("results", [])[:limit*2]:
             movie_id = movie_summary.get('id')
             if movie_id:
-                details = fetch_movie_details(movie_id)
+                # Use the cached fetch_movie_details
+                details = fetch_movie_details(movie_id) 
                 if details and details["poster"]:
                     trending_list.append(details)
             if len(trending_list) >= limit:
                 break
-                
         return trending_list
     except Exception:
         return []
 
-def fetch_popular_by_genre(genre_name, genre_id, limit=5):
-    """
-    Fetches movies by genre using a robust 3-step fallback.
-    Returns (list of movies, source_type). If < 5 found, returns empty list.
-    """
+# Optimization 2 (Cont.): Cache the Genre fetch
+@st.cache_data(show_spinner="Fetching Genre Data...", ttl=3600)
+def get_popular_by_genre_data(genre_name, genre_id, limit=5, movies_df=movies):
+    """Fetches movies by genre using a robust 3-step fallback, now cached."""
     
     def fetch_movies_from_url(url, limit):
         movies_found = []
@@ -600,7 +625,7 @@ def fetch_popular_by_genre(genre_name, genre_id, limit=5):
             for movie_summary in data.get("results", [])[:limit*2]:
                 movie_id = movie_summary.get('id')
                 if movie_id:
-                    details = fetch_movie_details(movie_id)
+                    details = fetch_movie_details(movie_id) # Use cached function
                     if details and details["poster"]:
                         movies_found.append(details)
                 if len(movies_found) >= limit:
@@ -609,6 +634,7 @@ def fetch_popular_by_genre(genre_name, genre_id, limit=5):
             pass
         return movies_found
 
+    # ... (Your existing 3-step fallback logic for fetching genre movies remains the same) ...
     # --- Attempt 1: Current Trending/Popular ---
     trending_url = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=popularity.desc&with_genres={genre_id}&page=1&vote_count.gte=50"
     movie_list = fetch_movies_from_url(trending_url, limit)
@@ -621,14 +647,14 @@ def fetch_popular_by_genre(genre_name, genre_id, limit=5):
     if len(movie_list) == limit:
         return movie_list, "all-time"
 
-    # --- Attempt 3: Local Dataset Fallback (Fallback 2, ensures at least 5 movies for display) ---
+    # --- Attempt 3: Local Dataset Fallback (Fallback 2) ---
     if not movie_list:
         try:
             genre_tag = genre_name.lower().replace(" ", "")
             if genre_tag == "sci-fi": 
                 genre_tag = "sciencefiction" 
             
-            potential_fallbacks = movies[movies['tags'].str.contains(genre_tag, case=False, na=False)]
+            potential_fallbacks = movies_df[movies_df['tags'].str.contains(genre_tag, case=False, na=False)]
             
             if not potential_fallbacks.empty:
                 local_movies_for_genre = []
@@ -654,25 +680,7 @@ def fetch_popular_by_genre(genre_name, genre_id, limit=5):
 
     return [], "none"
 
-def recommend(movie):
-    try:
-        index = movies[movies['title'] == movie].index[0]
-        distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])[1:]
-    except IndexError:
-        st.error(f"Movie '{movie}' not found in the dataset.")
-        return []
-    
-    recs = []
-    for i in distances:
-        movie_id = movies.iloc[i[0]].movie_id
-        details = fetch_movie_details(movie_id)
-        if details and details["poster"]:
-            recs.append(details)
-        if len(recs) == 5:
-            break
-    return recs
-
-# --- Helper function to display movie cards ---
+# --- Helper function to display movie cards (no change needed here) ---
 def display_movie_row(movie_list, key_prefix):
     num_cols = min(len(movie_list), 5)
     cols = st.columns(5, gap="medium")
@@ -702,7 +710,7 @@ def display_movie_row(movie_list, key_prefix):
                 
                 st.markdown("</div></div>", unsafe_allow_html=True)
 
-# --- Custom Loading Animation ---
+# --- Custom Loading Animation (no change needed here) ---
 def show_loading_animation():
     st.markdown("""
         <div class="loading-container">
@@ -721,8 +729,7 @@ if "selected_detail" not in st.session_state:
     st.session_state.selected_detail = None
     st.session_state.recommendations = []
     st.session_state.current_movie = None
-    # NEW: State to hold the details of the currently selected movie from the dropdown
-    st.session_state.selected_movie_info = None 
+    st.session_state.selected_movie_info = None
 
 # --- PROFESSIONAL MOVIE DETAILS PAGE (View for a single movie) ---
 if st.session_state.selected_detail:
@@ -732,6 +739,7 @@ if st.session_state.selected_detail:
         st.session_state.selected_detail = None
         st.rerun()
     
+    # ... (Details page display logic remains the same) ...
     st.markdown(f'<h2 class="section-header">{movie["title"]}</h2>', unsafe_allow_html=True)
     
     # First Row: Poster and Movie Details
@@ -792,7 +800,7 @@ if st.session_state.selected_detail:
                 </div>
             """, unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)  # Close movie-details-simple
+        st.markdown('</div>', unsafe_allow_html=True) 
         
         # Production Team
         st.markdown("### 👥 Production Team")
@@ -845,6 +853,7 @@ if st.session_state.selected_detail:
         st.markdown("### 🎥 Official Trailer")
         st.video(f"https://www.youtube.com/watch?v={movie['trailer_key']}")
 
+
 # --- PROFESSIONAL MAIN RECOMMENDATIONS PAGE ---
 else:
     # Create tabs container
@@ -858,42 +867,38 @@ else:
             index=0
         )
         
-        # --- FIX STARTS HERE ---
-        # 1. Check if a new movie is selected or if data needs initial fetch
+        # Optimization 3: Only recalculate if the selected movie changes
         if selected_movie and (selected_movie != st.session_state.current_movie or not st.session_state.recommendations):
             st.session_state.current_movie = selected_movie
             
+            # Use a single block for loading to avoid flicker
             with st.empty():
                 show_loading_animation()
                 
-                # a. Fetch the movie_id for the selected movie
                 try:
+                    # a. Fetch the movie_id for the selected movie
                     movie_id_row = movies[movies['title'] == selected_movie].iloc[0]
                     selected_movie_id = movie_id_row['movie_id']
-                except IndexError:
-                    st.error(f"Movie '{selected_movie}' not found in the dataset index.")
-                    st.session_state.recommendations = []
-                    st.session_state.selected_movie_info = None
-                    # Do not rerun if data is bad
                     
-                else:
-                    # b. Fetch the full details for the selected movie
+                    # b. Fetch the full details for the selected movie (cached)
                     st.session_state.selected_movie_info = fetch_movie_details(selected_movie_id)
                     
-                    # c. Fetch the 5 recommendations
-                    st.session_state.recommendations = recommend(selected_movie)
+                    # c. Fetch the 5 recommendations (cached)
+                    st.session_state.recommendations = recommend(selected_movie, movies, similarity)
                     
-                    # Rerun to clear the loading animation and draw the results
-                    st.rerun() 
+                except Exception as e:
+                    st.error(f"Error processing selection: {e}")
+                    st.session_state.recommendations = []
+                    st.session_state.selected_movie_info = None
+                    
+                st.rerun() # Rerun once to display results
 
         # 2. Display the selected movie's information first
         if st.session_state.get('selected_movie_info'):
             main_movie = st.session_state.selected_movie_info
             
-            # Display Header
             st.markdown(f'<h3 class="subsection-header">Your Selection: {main_movie["title"]}</h3>', unsafe_allow_html=True)
             
-            # Display Poster and Overview in a clean layout
             col_poster, col_overview = st.columns([1, 4], gap="large")
             
             with col_poster:
@@ -903,7 +908,6 @@ else:
                     st.warning("Poster not found.")
                 
             with col_overview:
-                # Display Movie Details
                 st.markdown('<div class="movie-details-header" style="margin-top:0;">Details</div>', unsafe_allow_html=True)
                 st.markdown(f"""
                     <div style="color: #e0e0e0; font-size: 1.1rem; line-height: 1.6;">
@@ -916,7 +920,6 @@ else:
                 st.markdown('<div class="overview-header" style="margin-top:1.5rem; margin-bottom:1rem;">Synopsis</div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="overview-content" style="font-size:1rem; line-height:1.6; color: #ccc; margin-bottom: 1.5rem;">{main_movie["overview"]}</div>', unsafe_allow_html=True)
                 
-                # Add an "Explore Details" button to transition to the full details page
                 if st.button("See Full Details 🔍", key="main_explore_button", use_container_width=False):
                      st.session_state.selected_detail = main_movie
                      st.rerun()
@@ -928,7 +931,6 @@ else:
             
         if st.session_state.recommendations:
             display_movie_row(st.session_state.recommendations, "recommend")
-        # --- FIX ENDS HERE ---
     
     with tab2:
         st.markdown('<h3 class="section-header">🔥 Trending Now</h3>', unsafe_allow_html=True)
@@ -936,6 +938,7 @@ else:
         # --- 1. CURRENTLY TRENDING (Overall Top 5) ---
         st.markdown('<p class="subsection-header">🌟 Currently Trending</p>', unsafe_allow_html=True)
         
+        # Fetching top trending movies (now cached)
         top_trending = fetch_top_trending_movies(limit=5)
         
         if top_trending:
@@ -948,23 +951,20 @@ else:
         # --- 2. GENRE BREAKDOWN (Strict 5 Movies per Genre) ---
         st.markdown('<p class="subsection-header">🎬 Trending by Genre</p>', unsafe_allow_html=True)
 
-        # Pre-fetch all genre data first
+        # Optimization: Fetch all genre data inside one cached function call
         genre_data = {}
-        with st.spinner("Fetching trending movies by genre..."):
-            for genre_name, genre_id in GENRES_TO_DISPLAY.items():
-                genre_movies, source = fetch_popular_by_genre(genre_name, genre_id, limit=5)
-                genre_data[genre_name] = (genre_movies, source)
+        for genre_name, genre_id in GENRES_TO_DISPLAY.items():
+            genre_movies, source = get_popular_by_genre_data(genre_name, genre_id, limit=5)
+            genre_data[genre_name] = (genre_movies, source)
 
-        # Display only genres that have 5 movies - with simple text titles
+        # Display results (no change)
         displayed_genres = 0
         for genre_name, (genre_movies, source) in genre_data.items():
             if len(genre_movies) == 5:
                 displayed_genres += 1
                 with st.container():
-                    # Simple text-only genre title (same style as Currently Trending)
                     st.markdown(f'<div class="genre-title-simple">{genre_name}</div>', unsafe_allow_html=True)
                     
-                    # Display the 5 movie posters
                     display_movie_row(genre_movies, f"genre_{genre_name}")
                     
                     if displayed_genres < len([g for g in genre_data.values() if len(g[0]) == 5]):
