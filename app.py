@@ -2,185 +2,490 @@ import streamlit as st
 import pickle
 import requests
 import pandas as pd
+import random 
 
 st.set_page_config(layout="wide", page_title="CineVerse", page_icon="🎬")
 
-# 🎨 Custom CSS with Vector Icons and Refined Blue Theme
+# --- CSS STYLES (Removed selected movie from nav bar, always show details) ---
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css');
         
-        html, body, [class*="st-emotion-cache"] {
+        * {
             font-family: 'Poppins', sans-serif;
-            color: #d8d8d8;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         .stApp {
-            background: #0a0a0a;
-            overflow-y: hidden; /* This line prevents vertical scrolling */
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background-attachment: fixed;
         }
         
-        /* Specific rules to remove top space and align */
-        .st-emotion-cache-z5fcl4 { 
-            padding-top: 0rem; /* Ensures no padding at the very top of the main content area */
-            
+        /* Remove all default padding and margins */
+        .st-emotion-cache-z5fcl4 {
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
         }
-        h1 { 
-             font-size: 1em;
-            margin-top: 0rem; /* Removes default top margin from the main title */
-            padding-top: 0rem; /* Ensures no padding at the top of the main title */
-        }
-        /* Further adjustments for potential container spacing */
+        
         .block-container {
-            padding-top: 0rem;
-            padding-left: 1rem; /* Adjust as needed */
-            padding-right: 1rem; /* Adjust as needed */
-            padding-bottom: 0rem;
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
         }
         
-
-
-        h1, h2, h3, h4, h5, h6 {
-            color: #f0f0f0;
-            font-weight: 600;
-            text-shadow: 1px 1px 2px rgba(0, 123, 255, 0.2);
-        }
-        
-        h1::before {
-            content: '\\f008'; /* Font Awesome film icon */
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            color: #4dc2ff;
-            margin-right: 15px;
-            font-size: 1em;
-            vertical-align: middle;
-        }
-
-        .icon-movie::before { content: '\\f03d'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-overview::before { content: '\\f02d'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-crew::before { content: '\\f500'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-cast::before { content: '\\f0c0'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-trailer::before { content: '\\f144'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-search::before { content: '\\f002'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); z-index: 10; }
-        .icon-trending::before { content: '\\f06d'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; margin-right: 8px; }
-        .icon-info::before { content: '\\f05a'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #4dc2ff; }
-
-        /* General button styling */
-        .stButton>button {
-            background-color: rgba(0, 150, 255, 0.1);
-            color: #4dc2ff;
-            border: 1px solid rgba(0, 150, 255, 0.4);
-            border-radius: 10px;
-            padding: 5px 15px;
-            font-weight: 600;
-            transition: all 0.3s ease-in-out;
-            box-shadow: 0 4px 15px rgba(0, 150, 255, 0.2);
-            backdrop-filter: blur(5px);
-            cursor: pointer;
-        }
-        .stButton>button:hover {
-            background-color: rgba(0, 150, 255, 0.3);
-            color: #ffffff;
-            transform: scale(1.05);
-            border: 1px solid rgba(0, 150, 255, 0.8);
-            box-shadow: 0px 0px 20px rgba(0, 150, 255, 0.8), inset 0px 0px 10px rgba(0, 150, 255, 0.5);
-        }
-        
-        /* New styling for the info box under the poster */
-        .info-button-container {
-            background-color: rgba(0, 150, 255, 0.1);
-            border: 1px solid rgba(0, 150, 255, 0.4);
-            border-radius: 10px;
-            padding: 5px;
-            margin-top: 10px;
+        /* Premium Header styling */
+        .main-header {
+            background: linear-gradient(90deg, #0096ff 0%, #00d4ff 50%, #6e8efb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             text-align: center;
+            font-size: 4rem !important;
+            font-weight: 800 !important;
+            margin: 0.5rem 0 0.2rem 0 !important;
+            padding: 0 !important;
+            line-height: 1.1 !important;
+            text-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #88c8ff;
+            font-size: 1.2rem;
+            margin: 0 0 2rem 0 !important;
+            padding: 0 !important;
+            font-weight: 300;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+
+        /* Enhanced Premium Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 8px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background: transparent !important;
+            color: #88c8ff !important;
+            border-radius: 20px !important;
+            padding: 12px 28px !important;
+            font-weight: 500 !important;
+            font-size: 1.1rem !important;
+            border: none !important;
+            transition: all 0.3s ease !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: linear-gradient(135deg, #0096ff 0%, #00d4ff 100%) !important;
+            color: white !important;
+            box-shadow: 0 8px 25px rgba(0, 150, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            transform: translateY(-2px);
+            font-weight: 600 !important;
+        }
+
+        .stTabs [data-baseweb="tab"]:hover:not([aria-selected="true"]) {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 150, 255, 0.2);
+        }
+
+        /* Enhanced Search Box */
+        .stSelectbox > div > div {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 2px solid rgba(0, 150, 255, 0.4) !important;
+            border-radius: 20px !important;
+            padding: 15px 25px !important;
+            color: white !important;
+            font-size: 1.1rem !important;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 150, 255, 0.1);
+        }
+
+        .stSelectbox > div > div:hover {
+            border-color: #0096ff !important;
+            box-shadow: 0 8px 25px rgba(0, 150, 255, 0.3) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced Movie Card Design - ALWAYS SHOW DETAILS */
+        .movie-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 2rem;
             width: 100%;
+            gap: 1rem;
         }
 
-        .info-button-container .stButton > button {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            padding: 5px 10px;
-            width: 100%;
-            color: #4dc2ff;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .info-button-container .stButton > button:hover {
-            background-color: rgba(0, 150, 255, 0.2);
-            transform: scale(1.02);
-            color: #ffffff;
-            box-shadow: none;
-        }
-
-        /* Movie Card for Recommendations and Trending */
         .movie-card {
             position: relative;
-            border-radius: 15px;
+            border-radius: 25px;
             overflow: hidden;
-            transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
             border: 2px solid transparent;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(20px);
             width: 100%;
-            aspect-ratio: 2/3; 
+            aspect-ratio: 2/3;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
+
         .movie-card:hover {
-            transform: translateY(-8px) scale(1.08);
-            box-shadow: 0 15px 40px rgba(0, 150, 255, 0.6);
+            transform: translateY(-15px) scale(1.05);
+            box-shadow: 0 25px 50px rgba(0, 150, 255, 0.4);
             border: 2px solid #0096ff;
         }
-        .movie-card img {
+
+        .movie-poster {
             width: 100%;
-            height: 100%; 
-            object-fit: cover; 
-            border-radius: 12px;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s ease;
             display: block;
-            transition: filter 0.3s ease;
         }
-        .movie-card:hover img {
-            filter: brightness(0.7);
-        }
+
+        /* ALWAYS VISIBLE OVERLAY - No hover needed */
         .movie-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 22px 18px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
-            color: white;
-            transition: opacity 0.4s ease;
-            opacity: 1; 
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+            padding: 1.5rem 1rem 1rem;
+            transform: translateY(0); /* Always visible */
+            transition: transform 0.3s ease;
         }
+
         .movie-title-overlay {
-            font-weight: 700;
-            font-size: 17px;
-            text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-        }
-        .movie-rating-overlay {
-            font-size: 12px; 
-            color: #66b3ff;
+            color: white;
             font-weight: 600;
-            margin-top: 5px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .movie-rating-overlay {
+            color: #ffd700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Enhanced Genre Badges - No horizontal scroll */
+        .genre-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .genre-badge {
             display: inline-block;
-            background: rgba(0,150,255,0.25);
-            color: #80d4ff;
-            padding: 3px 8px; 
-            margin: 3px 3px 0 0;
-            border-radius: 8px;
-            font-size: 10px; 
+            background: rgba(0, 150, 255, 0.3);
+            color: #88c8ff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(0, 150, 255, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80px;
+        }
+
+        /* Enhanced Button Styles */
+        .stButton > button {
+            background: linear-gradient(135deg, #0096ff 0%, #00d4ff 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 15px !important;
+            padding: 12px 24px !important;
+            font-weight: 600 !important;
+            font-size: 0.9rem !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 5px 15px rgba(0, 150, 255, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+
+        .stButton > button:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 25px rgba(0, 150, 255, 0.5) !important;
+        }
+
+        .stButton > button:active {
+            transform: translateY(-1px) !important;
+        }
+
+        .stButton > button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .stButton > button:hover::before {
+            left: 100%;
+        }
+
+        /* Back Button Special Style */
+        .stButton > button[key="back_button"] {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%) !important;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3) !important;
+        }
+
+        .stButton > button[key="back_button"]:hover {
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5) !important;
+        }
+
+        /* Simple Text-Only Movie Details */
+        .movie-details-simple {
+            margin-bottom: 2rem;
+        }
+
+        .movie-details-header {
+            color: #88c8ff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-left: 10px;
+            border-left: 5px solid #0096ff;
+        }
+
+        .movie-detail-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .detail-icon {
+            font-size: 1.3rem;
+            margin-right: 1rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .detail-text {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .rating-stars {
+            color: #ffd700;
+            font-size: 1.4rem;
+            margin-right: 0.5rem;
+        }
+
+        .rating-value {
+            color: #88c8ff;
             font-weight: 500;
-            border: 1px solid rgba(0,150,255,0.4);
+            margin-left: 0.5rem;
+        }
+
+        /* Cast & Crew Styles */
+        .simple-cast-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .simple-cast-card:hover {
+            transform: translateY(-5px);
+            border-color: #0096ff;
+            box-shadow: 0 10px 20px rgba(0, 150, 255, 0.2);
+        }
+        
+        .cast-image {
+            border-radius: 10px;
+            margin-bottom: 0.8rem;
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .simple-crew-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .simple-crew-card:hover {
+            transform: translateY(-3px);
+            border-color: #0096ff;
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: linear-gradient(90deg, #0096ff, #6e8efb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.2rem !important;
+            font-weight: 700 !important;
+            margin: 1.5rem 0 2rem 0 !important;
+            padding: 0 !important;
+            text-align: center;
+            line-height: 1.2;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+        }
+        
+        .subsection-header {
+            color: #88c8ff;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+            padding-left: 10px;
+            border-left: 5px solid #0096ff;
+        }
+        
+        /* Simple Genre Title Style - Like Currently Trending */
+        .genre-title-simple {
+            color: #88c8ff;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+            padding-left: 10px;
+            border-left: 5px solid #0096ff;
+        }
+        
+        .info-message {
+            color: #88c8ff;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            padding-left: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #88c8ff;
+            padding: 3rem 0 1.5rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Enhanced Loading Animation */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            padding: 2rem 0;
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .loading-dots div {
+            width: 12px;
+            height: 12px;
+            background-color: #0096ff;
+            border-radius: 50%;
+            margin: 0 5px;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+
+        .loading-dots div:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots div:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dots div:nth-child(3) { animation-delay: 0s; }
+        .loading-dots div:nth-child(4) { animation-delay: 0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Genre Section Enhancements */
+        .genre-section {
+            margin-bottom: 3rem;
+        }
+
+        /* Remove horizontal scroll from all containers */
+        .row-widget.stColumns {
+            overflow: visible !important;
+        }
+        
+        .element-container {
+            overflow: visible !important;
+        }
+        
+        /* Ensure no horizontal scrolling in movie cards */
+        .movie-card-container {
+            overflow: visible !important;
+        }
+
+        /* Full Width Overview Section */
+        .overview-full-width {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin: 2rem 0;
+        }
+
+        .overview-header {
+            color: #88c8ff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-left: 10px;
+            border-left: 5px solid #0096ff;
+        }
+
+        .overview-content {
+            color: #e0e0e0;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            text-align: justify;
         }
     </style>
 """, unsafe_allow_html=True)
-
 
 # --- GLOBAL VARIABLES & CACHING ---
 try:
@@ -190,11 +495,33 @@ except FileNotFoundError:
     st.error("Model files not found. Please ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are in the correct directory.")
     st.stop()
 
-API_KEY = st.secrets["TMDB_API_KEY"]
+try:
+    API_KEY = st.secrets["TMDB_API_KEY"]
+except KeyError:
+    st.warning("TMDB_API_KEY not found in st.secrets. Using a placeholder key.")
+    API_KEY = "dummy_api_key_for_no_secret" 
 
-# --- Fetch functions (unchanged) ---
+# --- TMDB Genre Mapping ---
+GENRES_TO_DISPLAY = {
+    "Action": 28,
+    "Adventure": 12,
+    "Romance": 10749,
+    "Horror": 27,
+    "Sci-Fi": 878,
+    "Drama": 18,
+    "Mystery": 9648
+}
+
+# --- Fetch functions ---
 @st.cache_data(show_spinner=False)
 def fetch_movie_details(movie_id):
+    """Fetches full movie details including credits and trailer."""
+    if isinstance(movie_id, (pd.Series, pd.DataFrame)):
+        try:
+            movie_id = movie_id.iloc[0]['movie_id']
+        except:
+            return None
+    
     try:
         url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}&language=en-US&append_to_response=credits,videos"
         data = requests.get(url, timeout=10).json()
@@ -224,30 +551,102 @@ def fetch_movie_details(movie_id):
             "director": director,
             "writer": writer,
             "producer": producer,
-            "trailer_key": trailer_key
+            "trailer_key": trailer_key,
+            "runtime": data.get("runtime"),
+            "budget": data.get("budget"),
+            "revenue": data.get("revenue"),
+            "id": movie_id
         }
     except Exception:
         return None
 
 @st.cache_data(show_spinner=False)
-def fetch_trending_movies():
+def fetch_top_trending_movies(limit=5):
+    """Fetches and processes full details for the top N overall trending movies."""
     try:
         url = f"https://api.themoviedb.org/3/trending/movie/week?api_key={API_KEY}"
         data = requests.get(url, timeout=10).json()
+        
         trending_list = []
-        for movie in data.get("results", []):
-            details = fetch_movie_details(movie.get('id'))
-            genres = details['genres'] if details else []
-            trending_list.append({
-                "title": movie.get("title"),
-                "poster": f"https://image.tmdb.org/t/p/w500/{movie['poster_path']}" if movie.get("poster_path") else None,
-                "rating": movie.get("vote_average", 0.0),
-                "id": movie.get("id"),
-                "genres": genres
-            })
+        for movie_summary in data.get("results", [])[:limit*2]:
+            movie_id = movie_summary.get('id')
+            if movie_id:
+                details = fetch_movie_details(movie_id)
+                if details and details["poster"]:
+                    trending_list.append(details)
+            if len(trending_list) >= limit:
+                break
+                
         return trending_list
     except Exception:
         return []
+
+def fetch_popular_by_genre(genre_name, genre_id, limit=5):
+    """
+    Fetches movies by genre using a robust 3-step fallback.
+    Returns (list of movies, source_type). If < 5 found, returns empty list.
+    """
+    
+    def fetch_movies_from_url(url, limit):
+        movies_found = []
+        try:
+            data = requests.get(url, timeout=10).json()
+            for movie_summary in data.get("results", [])[:limit*2]:
+                movie_id = movie_summary.get('id')
+                if movie_id:
+                    details = fetch_movie_details(movie_id)
+                    if details and details["poster"]:
+                        movies_found.append(details)
+                if len(movies_found) >= limit:
+                    break
+        except Exception:
+            pass
+        return movies_found
+
+    # --- Attempt 1: Current Trending/Popular ---
+    trending_url = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=popularity.desc&with_genres={genre_id}&page=1&vote_count.gte=50"
+    movie_list = fetch_movies_from_url(trending_url, limit)
+    if len(movie_list) == limit: 
+        return movie_list, "trending"
+
+    # --- Attempt 2: All-Time Popular/Highest Voted (Fallback 1) ---
+    all_time_url = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=vote_count.desc&with_genres={genre_id}&page=1&vote_average.gte=7.0&vote_count.gte=1000"
+    movie_list = fetch_movies_from_url(all_time_url, limit)
+    if len(movie_list) == limit:
+        return movie_list, "all-time"
+
+    # --- Attempt 3: Local Dataset Fallback (Fallback 2, ensures at least 5 movies for display) ---
+    if not movie_list:
+        try:
+            genre_tag = genre_name.lower().replace(" ", "")
+            if genre_tag == "sci-fi": 
+                genre_tag = "sciencefiction" 
+            
+            potential_fallbacks = movies[movies['tags'].str.contains(genre_tag, case=False, na=False)]
+            
+            if not potential_fallbacks.empty:
+                local_movies_for_genre = []
+                if len(potential_fallbacks) >= limit:
+                    sampled_rows = potential_fallbacks.sample(n=limit, random_state=random.randint(0, 1000))
+                    for index, row in sampled_rows.iterrows():
+                        details = fetch_movie_details(row.movie_id)
+                        if details and details["poster"]:
+                            local_movies_for_genre.append(details)
+                else:
+                    for index, row in potential_fallbacks.iterrows():
+                        details = fetch_movie_details(row.movie_id)
+                        if details and details["poster"]:
+                            local_movies_for_genre.append(details)
+                    while len(local_movies_for_genre) < limit and local_movies_for_genre:
+                        local_movies_for_genre.extend(local_movies_for_genre)
+                    local_movies_for_genre = local_movies_for_genre[:limit]
+
+                if len(local_movies_for_genre) == limit:
+                    return local_movies_for_genre, "local_fallback"
+        except Exception:
+            pass 
+
+    return [], "none"
 
 def recommend(movie):
     try:
@@ -267,111 +666,240 @@ def recommend(movie):
             break
     return recs
 
-# ---------------- UI ----------------
-st.title("CineVerse Recommender")
+# --- Helper function to display movie cards ---
+def display_movie_row(movie_list, key_prefix):
+    num_cols = min(len(movie_list), 5)
+    cols = st.columns(5, gap="medium")
+    
+    for idx, movie in enumerate(movie_list):
+        if idx < num_cols:
+            with cols[idx]:
+                genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
+                st.markdown(f"""
+                    <div class="movie-card-container">
+                        <div class="movie-card">
+                            <img class="movie-poster" src="{movie['poster']}" alt="{movie['title']} poster">
+                            <div class="movie-overlay">
+                                <div class="movie-title-overlay">{movie['title']}</div>
+                                <div class="movie-rating-overlay">
+                                    {"⭐" * int(round(movie['rating'] / 2))} ({movie['rating']:.1f}/10)
+                                </div>
+                                <div class="genre-badges">{genres_html}</div>
+                            </div>
+                        </div>
+                        <div style="width: 100%;">
+                """, unsafe_allow_html=True)
+                
+                if st.button("Explore Movie 🎬", key=f"{key_prefix}_info_button_{movie['id']}-{idx}", use_container_width=True):
+                    st.session_state.selected_detail = movie
+                    st.rerun()
+                
+                st.markdown("</div></div>", unsafe_allow_html=True)
+
+# --- Custom Loading Animation ---
+def show_loading_animation():
+    st.markdown("""
+        <div class="loading-container">
+            <div class="loading-dots">
+                <div></div><div></div><div></div><div></div>
+            </div>
+            <p style="color: #88c8ff; font-size: 1.1rem; font-weight: 500; text-align: center;">Discovering cinematic masterpieces...</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# ---------------- PROFESSIONAL PREMIUM UI ----------------
+st.markdown('<h1 class="main-header">CINIVERSE</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Your Gateway to Cinematic Excellence</p>', unsafe_allow_html=True)
 
 if "selected_detail" not in st.session_state:
     st.session_state.selected_detail = None
     st.session_state.recommendations = []
     st.session_state.current_movie = None
 
-# --- FULL DETAILS PAGE ---
+# --- PROFESSIONAL MOVIE DETAILS PAGE ---
 if st.session_state.selected_detail:
     movie = st.session_state.selected_detail
-    if st.button("⬅️ Back to Recommendations", key="back_button"):
+    
+    if st.button("⬅️ Back to Recommendations", key="back_button", use_container_width=True):
         st.session_state.selected_detail = None
         st.rerun()
-    st.markdown(f"<h3 class='icon-movie'>{movie['title']}</h3>", unsafe_allow_html=True)
-    left_col, right_col = st.columns([1, 2])
-    with left_col:
-        st.image(movie["poster"], width=300)
+    
+    st.markdown(f'<h2 class="section-header">{movie["title"]}</h2>', unsafe_allow_html=True)
+    
+    # First Row: Poster and Movie Details
+    col1, col2 = st.columns([1, 2], gap="large")
+    
+    with col1:
+        st.image(movie["poster"], use_container_width=True)
+    
+    with col2:
+        # Simple Text-Only Movie Details
+        st.markdown('<div class="movie-details-simple">', unsafe_allow_html=True)
+        st.markdown('<div class="movie-details-header">🎬 Movie Details</div>', unsafe_allow_html=True)
+        
+        # Rating with stars
         stars = "⭐" * int(round(movie["rating"] / 2))
-        st.markdown(f"**{stars}** ({movie['rating']:.1f}/10)")
-        st.write(f"📅 **Release Date:** {movie['release_date']}")
-        st.write("🎭 " + ", ".join(movie["genres"]))
-    with right_col:
-        st.markdown("<h3 class='icon-overview'>Overview</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:#ccc; font-size:15px; line-height:1.6;'>{movie['overview']}</p>", unsafe_allow_html=True)
-        st.markdown("<h3 class='icon-crew'>Crew</h3>", unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="movie-detail-line">
+                <div class="detail-icon">⭐</div>
+                <div class="detail-text">
+                    <span class="rating-stars">{stars}</span>
+                    <span class="rating-value">({movie["rating"]:.1f}/10)</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Release Date
+        st.markdown(f"""
+            <div class="movie-detail-line">
+                <div class="detail-icon">📅</div>
+                <div class="detail-text">
+                    <span>Release Date</span>
+                    <span style="margin-left: 10px; color: #88c8ff;">{movie['release_date']}</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Runtime (if available)
+        if movie.get('runtime'):
+            st.markdown(f"""
+                <div class="movie-detail-line">
+                    <div class="detail-icon">⏱️</div>
+                    <div class="detail-text">
+                        <span>Runtime</span>
+                        <span style="margin-left: 10px; color: #88c8ff;">{movie['runtime']} minutes</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Genres (if available)
+        if movie.get('genres'):
+            st.markdown(f"""
+                <div class="movie-detail-line">
+                    <div class="detail-icon">🎭</div>
+                    <div class="detail-text">
+                        <span>Genres</span>
+                        <span style="margin-left: 10px; color: #88c8ff;">{', '.join(movie['genres'])}</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close movie-details-simple
+        
+        # Production Team
+        st.markdown("### 👥 Production Team")
         crew_cols = st.columns(3)
-        if movie["director"]: 
-            with crew_cols[0]: st.caption(f"**Director:** {movie['director']['name']}")
-        if movie["writer"]: 
-            with crew_cols[1]: st.caption(f"**Writer:** {movie['writer']['name']}")
-        if movie["producer"]: 
-            with crew_cols[2]: st.caption(f"**Producer:** {movie['producer']['name']}")
-        st.markdown("<h3 class='icon-cast'>Cast</h3>", unsafe_allow_html=True)
+        crew_info = [
+            ("Director", movie.get("director")),
+            ("Writer", movie.get("writer")),
+            ("Producer", movie.get("producer"))
+        ]
+        
+        for idx, (role, person) in enumerate(crew_info):
+            with crew_cols[idx]:
+                if person:
+                    st.markdown(f"""
+                    <div class="simple-crew-card">
+                        <strong>{role}</strong><br>
+                        {person['name']}
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Cast Section
+        st.markdown("### 🌟 Featured Cast")
         cast_cols = st.columns(4)
         for idx, actor in enumerate(movie["cast"]):
             if idx < 4:
                 with cast_cols[idx]:
-                    if actor.get("profile_path"):
-                        st.image(f"https://image.tmdb.org/t/p/w200{actor['profile_path']}", width=100)
-                    st.caption(f"**{actor['name']}**")
-                    st.caption(f"*{actor['character']}*")
+                    profile_path = actor.get("profile_path")
+                    
+                    if profile_path:
+                        image_html = f'<img class="cast-image" src="https://image.tmdb.org/t/p/w200{profile_path}" alt="{actor["name"]} profile">'
+                    else:
+                        image_html = '<div class="cast-image" style="background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff;">👤</div>'
+
+                    st.markdown(f"""
+                    <div class="simple-cast-card">
+                        {image_html}
+                        <strong>{actor['name']}</strong><br>
+                        <small><em>{actor['character']}</em></small>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+    # Full Width Overview Section
+    st.markdown('<div class="overview-full-width">', unsafe_allow_html=True)
+    st.markdown('<div class="overview-header">📖 Synopsis</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="overview-content">{movie["overview"]}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Trailer Section
     if movie["trailer_key"]:
-        st.markdown("---")
-        st.markdown("<h3 class='icon-trailer'>Trailer</h3>", unsafe_allow_html=True)
+        st.markdown("### 🎥 Official Trailer")
         st.video(f"https://www.youtube.com/watch?v={movie['trailer_key']}")
 
-# --- MAIN RECOMMENDATIONS PAGE ---
+# --- PROFESSIONAL MAIN RECOMMENDATIONS PAGE ---
 else:
-    tab1, tab2 = st.tabs(["Search & Recommend", "Trending Now"])
+    # Create tabs container
+    tab1, tab2 = st.tabs(["🎯 Smart Recommendations", "🔥 Trending Now"])
+    
     with tab1:
-        selected_movie = st.selectbox("", movies['title'].values, key="movie_selector")
-        if selected_movie != st.session_state.current_movie:
+        selected_movie = st.selectbox(
+            "Search from our extensive movie collection...", 
+            movies['title'].values, 
+            key="movie_selector",
+            index=0
+        )
+        
+        # REMOVED: Selected movie title display in navigation bar
+        
+        if selected_movie != st.session_state.current_movie or not st.session_state.recommendations:
             st.session_state.current_movie = selected_movie
-            with st.spinner("Finding similar movies..."):
+            with st.empty():
+                show_loading_animation()
                 st.session_state.recommendations = recommend(selected_movie)
-                st.rerun()
+                if st.session_state.recommendations:
+                    st.rerun()
+        
         if st.session_state.recommendations:
-            st.markdown("---")
-            cols = st.columns(5)  # Changed from 4 to 5 columns
-            for idx, movie in enumerate(st.session_state.recommendations):
-                with cols[idx]:  # Use idx directly instead of idx % 4
-                    genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
-                    st.markdown(f"""
-                        <div class="movie-card">
-                            <img src="{movie['poster']}" alt="{movie['title']} poster">
-                            <div class="movie-overlay">
-                                <div class="movie-title-overlay">{movie['title']}</div>
-                                <div class="movie-rating-overlay">
-                                    {"⭐" * int(round(movie['rating'] / 2))} ({movie['rating']:.1f}/10)
-                                </div>
-                                {genres_html if genres_html else ""}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("ℹ️", key=f"info_button_{idx}"):
-                        st.session_state.selected_detail = movie
-                        st.rerun()
+            # REMOVED: The "Recommended based on..." line
+            display_movie_row(st.session_state.recommendations, "recommend")
+    
     with tab2:
-        st.markdown("<h2 class='icon-trending'>Trending Movies This Week</h2>", unsafe_allow_html=True)
-        trending_movies = fetch_trending_movies()
-        if trending_movies:
-            # Create two rows of 5 columns each for the 10 trending movies
-            for row in range(2):
-                cols = st.columns(5)
-                for col in range(5):
-                    idx = row * 5 + col
-                    if idx < len(trending_movies[:10]):
-                        movie = trending_movies[idx]
-                        with cols[col]:
-                            genres_html = "".join([f"<span class='genre-badge'>{g}</span>" for g in movie.get('genres', [])[:2]])
-                            st.markdown(f"""
-                                <div class="movie-card">
-                                    <img src="{movie['poster']}" alt="{movie['title']} poster">
-                                    <div class="movie-overlay">
-                                        <div class="movie-title-overlay">{movie['title']}</div>
-                                        <div class="movie-rating-overlay">
-                                            {"⭐" * int(round(movie['rating'] / 2))} ({movie['rating']:.1f}/10)
-                                        </div>
-                                        {genres_html if genres_html else ""}
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
-                            if st.button("ℹ️", key=f"trending_info_button_{idx}"):
-                                details = fetch_movie_details(movie['id'])
-                                if details:
-                                    st.session_state.selected_detail = details
-                                    st.rerun()
+        st.markdown('<h3 class="section-header">🔥 Trending Now</h3>', unsafe_allow_html=True)
+        
+        # --- 1. CURRENTLY TRENDING (Overall Top 5) ---
+        st.markdown('<p class="subsection-header">🌟 Currently Trending</p>', unsafe_allow_html=True)
+        
+        # REMOVED LOADING ANIMATION - Directly fetch and display
+        top_trending = fetch_top_trending_movies(limit=5)
+        
+        if top_trending:
+            display_movie_row(top_trending, "top_overall")
+        else:
+            st.info("Could not fetch overall trending movies at this time.")
+
+        st.markdown("---")
+        
+        # --- 2. GENRE BREAKDOWN (Strict 5 Movies per Genre) ---
+        st.markdown('<p class="subsection-header">🎬 Trending by Genre</p>', unsafe_allow_html=True)
+
+        # Pre-fetch all genre data first
+        genre_data = {}
+        for genre_name, genre_id in GENRES_TO_DISPLAY.items():
+            genre_movies, source = fetch_popular_by_genre(genre_name, genre_id, limit=5)
+            genre_data[genre_name] = (genre_movies, source)
+
+        # Display only genres that have 5 movies - with simple text titles
+        displayed_genres = 0
+        for genre_name, (genre_movies, source) in genre_data.items():
+            if len(genre_movies) == 5:
+                displayed_genres += 1
+                with st.container():
+                    # Simple text-only genre title (same style as Currently Trending)
+                    st.markdown(f'<div class="genre-title-simple">{genre_name}</div>', unsafe_allow_html=True)
+                    
+                    # Display the 5 movie posters
+                    display_movie_row(genre_movies, f"genre_{genre_name}")
+                    
+                    if displayed_genres < len([g for g in genre_data.values() if len(g[0]) == 5]):
+                        st.markdown("<br>", unsafe_allow_html=True)
