@@ -489,16 +489,21 @@ st.markdown("""
 
 # --- GLOBAL VARIABLES & CACHING ---
 try:
+    # IMPORTANT: Ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are available
     movies = pickle.load(open('artifacts/movie_list.pkl', 'rb'))
     similarity = pickle.load(open('artifacts/similarity.pkl', 'rb'))
 except FileNotFoundError:
     st.error("Model files not found. Please ensure 'artifacts/movie_list.pkl' and 'artifacts/similarity.pkl' are in the correct directory.")
     st.stop()
+except Exception as e:
+    st.error(f"Error loading model files: {e}")
+    st.stop()
 
 try:
     API_KEY = st.secrets["TMDB_API_KEY"]
 except KeyError:
-    st.warning("TMDB_API_KEY not found in st.secrets. Using a placeholder key.")
+    # Use a dummy key if secrets is unavailable for local testing, API calls will fail gracefully
+    # If deploying, you MUST set the TMDB_API_KEY secret.
     API_KEY = "dummy_api_key_for_no_secret" 
 
 # --- TMDB Genre Mapping ---
@@ -518,6 +523,7 @@ def fetch_movie_details(movie_id):
     """Fetches full movie details including credits and trailer."""
     if isinstance(movie_id, (pd.Series, pd.DataFrame)):
         try:
+            # Handle cases where the input is a DataFrame/Series slice instead of a direct ID
             movie_id = movie_id.iloc[0]['movie_id']
         except:
             return None
@@ -715,8 +721,10 @@ if "selected_detail" not in st.session_state:
     st.session_state.selected_detail = None
     st.session_state.recommendations = []
     st.session_state.current_movie = None
+    # NEW: State to hold the details of the currently selected movie from the dropdown
+    st.session_state.selected_movie_info = None 
 
-# --- PROFESSIONAL MOVIE DETAILS PAGE ---
+# --- PROFESSIONAL MOVIE DETAILS PAGE (View for a single movie) ---
 if st.session_state.selected_detail:
     movie = st.session_state.selected_detail
     
@@ -850,19 +858,77 @@ else:
             index=0
         )
         
-        # REMOVED: Selected movie title display in navigation bar
-        
-        if selected_movie != st.session_state.current_movie or not st.session_state.recommendations:
+        # --- FIX STARTS HERE ---
+        # 1. Check if a new movie is selected or if data needs initial fetch
+        if selected_movie and (selected_movie != st.session_state.current_movie or not st.session_state.recommendations):
             st.session_state.current_movie = selected_movie
+            
             with st.empty():
                 show_loading_animation()
-                st.session_state.recommendations = recommend(selected_movie)
-                if st.session_state.recommendations:
-                    st.rerun()
-        
+                
+                # a. Fetch the movie_id for the selected movie
+                try:
+                    movie_id_row = movies[movies['title'] == selected_movie].iloc[0]
+                    selected_movie_id = movie_id_row['movie_id']
+                except IndexError:
+                    st.error(f"Movie '{selected_movie}' not found in the dataset index.")
+                    st.session_state.recommendations = []
+                    st.session_state.selected_movie_info = None
+                    # Do not rerun if data is bad
+                    
+                else:
+                    # b. Fetch the full details for the selected movie
+                    st.session_state.selected_movie_info = fetch_movie_details(selected_movie_id)
+                    
+                    # c. Fetch the 5 recommendations
+                    st.session_state.recommendations = recommend(selected_movie)
+                    
+                    # Rerun to clear the loading animation and draw the results
+                    st.rerun() 
+
+        # 2. Display the selected movie's information first
+        if st.session_state.get('selected_movie_info'):
+            main_movie = st.session_state.selected_movie_info
+            
+            # Display Header
+            st.markdown(f'<h3 class="subsection-header">Your Selection: {main_movie["title"]}</h3>', unsafe_allow_html=True)
+            
+            # Display Poster and Overview in a clean layout
+            col_poster, col_overview = st.columns([1, 4], gap="large")
+            
+            with col_poster:
+                if main_movie.get("poster"):
+                    st.image(main_movie["poster"], width=250) 
+                else:
+                    st.warning("Poster not found.")
+                
+            with col_overview:
+                # Display Movie Details
+                st.markdown('<div class="movie-details-header" style="margin-top:0;">Details</div>', unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div style="color: #e0e0e0; font-size: 1.1rem; line-height: 1.6;">
+                        <strong>Rating:</strong> {"⭐" * int(round(main_movie["rating"] / 2))} ({main_movie["rating"]:.1f}/10)<br>
+                        <strong>Release:</strong> {main_movie["release_date"]}<br>
+                        <strong>Genres:</strong> {', '.join(main_movie["genres"])}
+                    </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown('<div class="overview-header" style="margin-top:1.5rem; margin-bottom:1rem;">Synopsis</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="overview-content" style="font-size:1rem; line-height:1.6; color: #ccc; margin-bottom: 1.5rem;">{main_movie["overview"]}</div>', unsafe_allow_html=True)
+                
+                # Add an "Explore Details" button to transition to the full details page
+                if st.button("See Full Details 🔍", key="main_explore_button", use_container_width=False):
+                     st.session_state.selected_detail = main_movie
+                     st.rerun()
+            
+            st.markdown("---")
+
+            # 3. Display Recommendations
+            st.markdown(f'<h3 class="subsection-header">Top 5 Recommendations for You</h3>', unsafe_allow_html=True)
+            
         if st.session_state.recommendations:
-            # REMOVED: The "Recommended based on..." line
             display_movie_row(st.session_state.recommendations, "recommend")
+        # --- FIX ENDS HERE ---
     
     with tab2:
         st.markdown('<h3 class="section-header">🔥 Trending Now</h3>', unsafe_allow_html=True)
@@ -870,7 +936,6 @@ else:
         # --- 1. CURRENTLY TRENDING (Overall Top 5) ---
         st.markdown('<p class="subsection-header">🌟 Currently Trending</p>', unsafe_allow_html=True)
         
-        # REMOVED LOADING ANIMATION - Directly fetch and display
         top_trending = fetch_top_trending_movies(limit=5)
         
         if top_trending:
@@ -885,9 +950,10 @@ else:
 
         # Pre-fetch all genre data first
         genre_data = {}
-        for genre_name, genre_id in GENRES_TO_DISPLAY.items():
-            genre_movies, source = fetch_popular_by_genre(genre_name, genre_id, limit=5)
-            genre_data[genre_name] = (genre_movies, source)
+        with st.spinner("Fetching trending movies by genre..."):
+            for genre_name, genre_id in GENRES_TO_DISPLAY.items():
+                genre_movies, source = fetch_popular_by_genre(genre_name, genre_id, limit=5)
+                genre_data[genre_name] = (genre_movies, source)
 
         # Display only genres that have 5 movies - with simple text titles
         displayed_genres = 0
