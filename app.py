@@ -7,7 +7,7 @@ import time # Import time for placeholder loading
 
 st.set_page_config(layout="wide", page_title="CineVerse", page_icon="🎬")
 
-# --- CSS STYLES (Your existing styles are kept here for consistency) ---
+# --- CSS STYLES (Mobile Responsiveness Fix Added) ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
@@ -25,15 +25,8 @@ st.markdown("""
             background-attachment: fixed;
         }
         
-        /* Remove all default padding and margins */
-        .st-emotion-cache-z5fcl4 {
-            padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-        }
-        
-        .block-container {
+        /* General Streamlit/Container Resets */
+        .st-emotion-cache-z5fcl4, .block-container {
             padding-top: 0rem !important;
             padding-bottom: 0rem !important;
             padding-left: 1rem !important;
@@ -165,7 +158,7 @@ st.markdown("""
             display: block;
         }
 
-        /* ALWAYS VISIBLE OVERLAY - No hover needed */
+        /* ALWAYS VISIBLE OVERLAY */
         .movie-overlay {
             position: absolute;
             bottom: 0;
@@ -173,7 +166,7 @@ st.markdown("""
             right: 0;
             background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
             padding: 1.5rem 1rem 1rem;
-            transform: translateY(0); /* Always visible */
+            transform: translateY(0); 
             transition: transform 0.3s ease;
         }
 
@@ -191,7 +184,7 @@ st.markdown("""
             margin-bottom: 0.5rem;
         }
 
-        /* Enhanced Genre Badges - No horizontal scroll */
+        /* Enhanced Genre Badges */
         .genre-badges {
             display: flex;
             flex-wrap: wrap;
@@ -215,7 +208,48 @@ st.markdown("""
             max-width: 80px;
         }
 
-        /* Enhanced Button Styles */
+        /* --- MOBILE SCREEN CSS FIX (Max-width 600px) --- */
+        @media (max-width: 600px) {
+            /* Reduce space on overlay for small cards */
+            .movie-overlay {
+                padding: 0.75rem 0.5rem 0.5rem; 
+            }
+
+            /* Make title font smaller to fit narrow card */
+            .movie-title-overlay {
+                font-size: 0.8rem; 
+                margin-bottom: 0.2rem;
+                /* Ensure single line title works best */
+                white-space: nowrap; 
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Make rating font smaller */
+            .movie-rating-overlay {
+                font-size: 0.7rem; 
+                margin-bottom: 0.3rem;
+            }
+            
+            /* Make genre badges smaller */
+            .genre-badge {
+                padding: 0.1rem 0.4rem;
+                font-size: 0.6rem;
+                max-width: 50px; 
+            }
+            
+            /* Adjust padding on other elements */
+            .main-header {
+                font-size: 2.5rem !important;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+        /* --- END MOBILE SCREEN CSS FIX --- */
+
+        /* Enhanced Button Styles (Rest of CSS omitted for brevity but remains the same) */
         .stButton > button {
             background: linear-gradient(135deg, #0096ff 0%, #00d4ff 100%) !important;
             color: white !important;
@@ -526,7 +560,6 @@ GENRES_TO_DISPLAY = {
 @st.cache_data(show_spinner=False, ttl=3600) # Cache API data for 1 hour
 def fetch_movie_details(movie_id):
     """Fetches full movie details including credits and trailer."""
-    # Ensure movie_id is a single integer/string
     if isinstance(movie_id, (pd.Series, pd.DataFrame)):
         try:
             movie_id = movie_id.iloc[0]['movie_id']
@@ -571,7 +604,6 @@ def fetch_movie_details(movie_id):
     except Exception:
         return None
 
-# Optimization 1: Cache the recommendation results
 @st.cache_data(show_spinner="Calculating Recommendations...")
 def recommend(movie_title, movies_df, similarity_matrix):
     try:
@@ -583,7 +615,6 @@ def recommend(movie_title, movies_df, similarity_matrix):
     recs = []
     for i in distances:
         movie_id = movies_df.iloc[i[0]].movie_id
-        # Call the cached TMDB fetch function
         details = fetch_movie_details(movie_id) 
         if details and details["poster"]:
             recs.append(details)
@@ -591,7 +622,6 @@ def recommend(movie_title, movies_df, similarity_matrix):
             break
     return recs
 
-# Optimization 2: Cache the Trending/Genre fetches (They are slow API calls)
 @st.cache_data(show_spinner="Fetching Top Trending...", ttl=3600)
 def fetch_top_trending_movies(limit=5):
     """Fetches and processes full details for the top N overall trending movies."""
@@ -603,7 +633,6 @@ def fetch_top_trending_movies(limit=5):
         for movie_summary in data.get("results", [])[:limit*2]:
             movie_id = movie_summary.get('id')
             if movie_id:
-                # Use the cached fetch_movie_details
                 details = fetch_movie_details(movie_id) 
                 if details and details["poster"]:
                     trending_list.append(details)
@@ -613,7 +642,6 @@ def fetch_top_trending_movies(limit=5):
     except Exception:
         return []
 
-# Optimization 2 (Cont.): Cache the Genre fetch
 @st.cache_data(show_spinner="Fetching Genre Data...", ttl=3600)
 def get_popular_by_genre_data(genre_name, genre_id, limit=5, movies_df=movies):
     """Fetches movies by genre using a robust 3-step fallback, now cached."""
@@ -625,7 +653,7 @@ def get_popular_by_genre_data(genre_name, genre_id, limit=5, movies_df=movies):
             for movie_summary in data.get("results", [])[:limit*2]:
                 movie_id = movie_summary.get('id')
                 if movie_id:
-                    details = fetch_movie_details(movie_id) # Use cached function
+                    details = fetch_movie_details(movie_id) 
                     if details and details["poster"]:
                         movies_found.append(details)
                 if len(movies_found) >= limit:
@@ -634,7 +662,6 @@ def get_popular_by_genre_data(genre_name, genre_id, limit=5, movies_df=movies):
             pass
         return movies_found
 
-    # ... (Your existing 3-step fallback logic for fetching genre movies remains the same) ...
     # --- Attempt 1: Current Trending/Popular ---
     trending_url = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=popularity.desc&with_genres={genre_id}&page=1&vote_count.gte=50"
     movie_list = fetch_movies_from_url(trending_url, limit)
@@ -682,6 +709,8 @@ def get_popular_by_genre_data(genre_name, genre_id, limit=5, movies_df=movies):
 
 # --- Helper function to display movie cards (no change needed here) ---
 def display_movie_row(movie_list, key_prefix):
+    # Streamlit automatically handles 5 columns becoming stacked vertically on mobile,
+    # but the content inside still benefits from the CSS media query for sizing.
     num_cols = min(len(movie_list), 5)
     cols = st.columns(5, gap="medium")
     
@@ -739,7 +768,6 @@ if st.session_state.selected_detail:
         st.session_state.selected_detail = None
         st.rerun()
     
-    # ... (Details page display logic remains the same) ...
     st.markdown(f'<h2 class="section-header">{movie["title"]}</h2>', unsafe_allow_html=True)
     
     # First Row: Poster and Movie Details
@@ -856,7 +884,6 @@ if st.session_state.selected_detail:
 
 # --- PROFESSIONAL MAIN RECOMMENDATIONS PAGE ---
 else:
-    # Create tabs container
     tab1, tab2 = st.tabs(["🎯 Smart Recommendations", "🔥 Trending Now"])
     
     with tab1:
@@ -867,23 +894,20 @@ else:
             index=0
         )
         
-        # Optimization 3: Only recalculate if the selected movie changes
         if selected_movie and (selected_movie != st.session_state.current_movie or not st.session_state.recommendations):
             st.session_state.current_movie = selected_movie
             
-            # Use a single block for loading to avoid flicker
             with st.empty():
                 show_loading_animation()
                 
                 try:
-                    # a. Fetch the movie_id for the selected movie
                     movie_id_row = movies[movies['title'] == selected_movie].iloc[0]
                     selected_movie_id = movie_id_row['movie_id']
                     
-                    # b. Fetch the full details for the selected movie (cached)
+                    # Fetching main movie details (cached)
                     st.session_state.selected_movie_info = fetch_movie_details(selected_movie_id)
                     
-                    # c. Fetch the 5 recommendations (cached)
+                    # Fetching recommendations (cached)
                     st.session_state.recommendations = recommend(selected_movie, movies, similarity)
                     
                 except Exception as e:
@@ -891,7 +915,7 @@ else:
                     st.session_state.recommendations = []
                     st.session_state.selected_movie_info = None
                     
-                st.rerun() # Rerun once to display results
+                st.rerun() 
 
         # 2. Display the selected movie's information first
         if st.session_state.get('selected_movie_info'):
@@ -899,11 +923,13 @@ else:
             
             st.markdown(f'<h3 class="subsection-header">Your Selection: {main_movie["title"]}</h3>', unsafe_allow_html=True)
             
+            # This section now uses dynamic sizing for the poster
             col_poster, col_overview = st.columns([1, 4], gap="large")
             
             with col_poster:
                 if main_movie.get("poster"):
-                    st.image(main_movie["poster"], width=250) 
+                    # FIX: Use use_container_width=True for responsiveness
+                    st.image(main_movie["poster"], use_container_width=True) 
                 else:
                     st.warning("Poster not found.")
                 
@@ -938,7 +964,6 @@ else:
         # --- 1. CURRENTLY TRENDING (Overall Top 5) ---
         st.markdown('<p class="subsection-header">🌟 Currently Trending</p>', unsafe_allow_html=True)
         
-        # Fetching top trending movies (now cached)
         top_trending = fetch_top_trending_movies(limit=5)
         
         if top_trending:
@@ -951,13 +976,11 @@ else:
         # --- 2. GENRE BREAKDOWN (Strict 5 Movies per Genre) ---
         st.markdown('<p class="subsection-header">🎬 Trending by Genre</p>', unsafe_allow_html=True)
 
-        # Optimization: Fetch all genre data inside one cached function call
         genre_data = {}
         for genre_name, genre_id in GENRES_TO_DISPLAY.items():
             genre_movies, source = get_popular_by_genre_data(genre_name, genre_id, limit=5)
             genre_data[genre_name] = (genre_movies, source)
 
-        # Display results (no change)
         displayed_genres = 0
         for genre_name, (genre_movies, source) in genre_data.items():
             if len(genre_movies) == 5:
