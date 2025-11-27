@@ -79,6 +79,7 @@ Explore trending movies
 Browse by genre
 
 View full movie details with trailer, cast, crew, and synopsis
+
 <br>
 🏛 Architecture<br>
 User Input → Search Movie → Fetch Movie Details → 
