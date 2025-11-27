@@ -91,6 +91,26 @@ Genre Section → TMDb API + Local Dataset → Movie Cards
 
 Movie Details Page → Full TMDb Movie Data → Cast, Crew, Trailer  
 
+⚙️ Installation
+1️⃣ Clone repository
+git clone https://github.com/yourusername/ciniverse.git
+cd ciniverse
+
+2️⃣ Install dependencies
+pip install -r requirements.txt
+
+3️⃣ Add TMDb API Key
+
+Create:
+
+.streamlit/secrets.toml
+
+
+Add:
+
+TMDB_API_KEY="your_api_key_here"
+
+4️⃣ Run
 
 
 
