@@ -1,7 +1,7 @@
 🎬 CINIVERSE – Movie Recommendation System
 Your Gateway to Cinematic Excellence
 
-1. Introduction
+1. Introduction<br>
 CINIVERSE is a fully AI-powered Movie Recommendation System built using Python, Streamlit,
 machine learning similarity algorithms, and the TMDb API. It provides personalized movie
 recommendations, trending movies, genre-based exploration, and complete movie details including
@@ -11,7 +11,7 @@ animations, gradients, and responsive layouts.
 • Smart movie recommendations using cosine similarity<br> • Trending movie section powered by TMDb
 API<br> • Genre-wise movie exploration<br> • Full movie details with trailer, cast, crew<br> • Interactive, premium UI
 with animations <br>• Mobile responsive and visually appealing design
-3. System Architecture
+3. System Architecture<br>
 The architecture consists of a content-based filtering recommendation model combined with real-time
 data from the TMDb API. The similarity engine uses vectorized metadata (tags, cast, crew, overview) to
 compute cosine similarity scores and identify the closest matches.
