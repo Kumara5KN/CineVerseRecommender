@@ -29,3 +29,18 @@ Screenshot 3: This view shows the dynamic recommendation results, where the top 
 are displayed using high-quality posters and rating overlays.
 ![Recommendation Movies](assets/Screenshot3.png)
 
+Screenshots:
+The Trending Movies section is shown here, pulling real-time trending content from the
+TMDb API and displaying movie cards with ratings and genres.
+This screenshot captures genre-wise browsing. Users can explore movies under Action,
+Drama, Mystery, Sci-Fi, and more with live API data.
+A movie details page is shown here. It includes the poster, release date, rating, runtime,
+genres, and production team information.
+ The cast section is displayed in this screenshot. It includes actor images, actor names,
+and character roles retrieved from TMDb API.
+ This image shows the Synopsis section, a full-width block containing detailed storyline
+information for the selected movie.
+The trailer preview section is visible here, embedding official YouTube trailers inside the
+CINIVERSE app.
+
+
