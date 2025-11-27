@@ -56,7 +56,7 @@ Each screenshot demonstrates how CINIVERSE integrates machine learning, real-tim
 custom-built UI components to form a complete movie recommendation ecosystem. The system
 provides a seamless, cinematic experience while delivering accurate and personalized results to users.
 <br><br>
-<p>------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+<p>------------------------------------------------------------------------------------------------------------------------------------</p>
 
 📘 Project Description
 
