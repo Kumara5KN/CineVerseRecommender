@@ -94,6 +94,7 @@ Movie Details Page → Full TMDb Movie Data → Cast, Crew, Trailer
 ⚙️ Installation<br>
 1️⃣ Clone repository
 git clone https://github.com/Kumara5KN/CineVerseRecommender.git
+
 cd ciniverse
 
 2️⃣ Install dependencies
