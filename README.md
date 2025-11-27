@@ -44,9 +44,12 @@ The trailer preview section is visible here, embedding official YouTube trailers
 CINIVERSE app.
 
 <p align="center">
-  <img src="assets/Screenshot1.png" width="45%">
-  <img src="assets/Screenshot2.png" width="45%">
-     <img src="assets/Screenshot2.png" width="45%">
+  <img src="assets/Screenshot4.png" width="45%">
+  <img src="assets/Screenshot5.png" width="45%">
+  <img src="assets/Screenshot6.png" width="45%">
+  <img src="assets/Screenshot7.png" width="45%">
+  <img src="assets/Screenshot8.png" width="45%">
+  <img src="assets/Screenshot9.png" width="45%">
 
 </p>
 
