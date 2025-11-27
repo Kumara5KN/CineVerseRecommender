@@ -50,7 +50,10 @@ CINIVERSE app.
   <img src="assets/Screenshot7.png" width="45%">
   <img src="assets/Screenshot8.png" width="45%">
   <img src="assets/Screenshot9.png" width="45%">
-
 </p>
+Conclusion
+Each screenshot demonstrates how CINIVERSE integrates machine learning, real-time API data, and
+custom-built UI components to form a complete movie recommendation ecosystem. The system
+provides a seamless, cinematic experience while delivering accurate and personalized results to users.
 
 
