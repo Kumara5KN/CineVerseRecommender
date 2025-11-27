@@ -80,5 +80,15 @@ Browse by genre
 
 View full movie details with trailer, cast, crew, and synopsis
 
+User Input → Search Movie → Fetch Movie Details → 
+Similarity Model → Top 5 Recommendations → Display UI  
+
+Trending Section → TMDb API → Movie Cards  
+
+Genre Section → TMDb API + Local Dataset → Movie Cards  
+
+Movie Details Page → Full TMDb Movie Data → Cast, Crew, Trailer  
+
+
 
 
