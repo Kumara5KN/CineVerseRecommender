@@ -29,7 +29,7 @@ Screenshot 3:Smart Recommendations<br> This view shows the dynamic recommendatio
 are displayed using high-quality posters and rating overlays.
 ![Recommendation Movies](assets/Screenshot3.png)
 
-Screenshots:
+Screenshots:<br>
 The Trending Movies section is shown here, pulling real-time trending content from the
 TMDb API and displaying movie cards with ratings and genres.
 This screenshot captures genre-wise browsing. Users can explore movies under Action,
