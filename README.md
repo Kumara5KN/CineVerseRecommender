@@ -8,9 +8,9 @@ recommendations, trending movies, genre-based exploration, and complete movie de
 cast, crew, and trailers. The system features a premium cinematic UI designed with custom CSS
 animations, gradients, and responsive layouts.
 2. Key Features
-• Smart movie recommendations using cosine similarity • Trending movie section powered by TMDb
-API • Genre-wise movie exploration • Full movie details with trailer, cast, crew • Interactive, premium UI
-with animations • Mobile responsive and visually appealing design
+• Smart movie recommendations using cosine similarity<br> • Trending movie section powered by TMDb
+API<br> • Genre-wise movie exploration<br> • Full movie details with trailer, cast, crew<br> • Interactive, premium UI
+with animations <br>• Mobile responsive and visually appealing design
 3. System Architecture
 The architecture consists of a content-based filtering recommendation model combined with real-time
 data from the TMDb API. The similarity engine uses vectorized metadata (tags, cast, crew, overview) to
