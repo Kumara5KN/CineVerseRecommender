@@ -81,7 +81,7 @@ Browse by genre
 View full movie details with trailer, cast, crew, and synopsis
 
 <br><br>
-🏛 Architecture
+🏛 Architecture<br>
 User Input → Search Movie → Fetch Movie Details → 
 Similarity Model → Top 5 Recommendations → Display UI  
 
