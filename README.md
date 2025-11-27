@@ -56,6 +56,8 @@ Each screenshot demonstrates how CINIVERSE integrates machine learning, real-tim
 custom-built UI components to form a complete movie recommendation ecosystem. The system
 provides a seamless, cinematic experience while delivering accurate and personalized results to users.
 <br><br>
+<p>------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+
 📘 Project Description
 
 CINIVERSE is an end-to-end Movie Recommendation System that uses:
@@ -81,6 +83,8 @@ Browse by genre
 View full movie details with trailer, cast, crew, and synopsis
 
 <br>
+<p>------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+
 🏛 Architecture<br>
 User Input → Search Movie → Fetch Movie Details → 
 Similarity Model → Top 5 Recommendations → Display UI  
