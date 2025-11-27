@@ -19,4 +19,7 @@ compute cosine similarity scores and identify the closest matches.
 
    Screenshot 1:This image shows the main homepage of the CINIVERSE system. It displays the title,
 subtitle, and search interface for selecting movies from the dataset.
+![Home Page](assets/screenshot1.png)
+![Movie Details](assets/screenshot2.png)
+
 
