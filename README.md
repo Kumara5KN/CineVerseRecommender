@@ -56,4 +56,29 @@ Each screenshot demonstrates how CINIVERSE integrates machine learning, real-tim
 custom-built UI components to form a complete movie recommendation ecosystem. The system
 provides a seamless, cinematic experience while delivering accurate and personalized results to users.
 
+📘 Project Description
+
+CINIVERSE is an end-to-end Movie Recommendation System that uses:
+
+Machine Learning (Cosine Similarity)
+
+TMDb API (Posters, Cast, Crew, Trailers, Trending Movies)
+
+Interactive Streamlit UI with premium styling
+
+Content-based recommendation engine
+
+Users can:
+
+Search any movie
+
+See similar movie recommendations
+
+Explore trending movies
+
+Browse by genre
+
+View full movie details with trailer, cast, crew, and synopsis
+
+
 
