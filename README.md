@@ -25,4 +25,7 @@ Screenshot 2: This screenshot displays the 'Smart Recommendations' section. When
 movie, the system previews the movie details before generating recommendations.
 ![Movie Details](assets/Screenshot2.png)
 
+Screenshot 3: This view shows the dynamic recommendation results, where the top 5 similar movies
+are displayed using high-quality posters and rating overlays.
+![Recommendation Movies](assets/Screenshot3.png)
 
