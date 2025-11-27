@@ -114,6 +114,33 @@ TMDB_API_KEY="your_api_key_here"
 4️⃣ Run
 streamlit run app.py
 
+▶️ Usage
+
+Open the app
+
+Choose a movie
+
+See details & recommendations
+
+Browse trending movies
+
+Explore genres
+
+Watch trailer
+
+🌐 Deployment (Streamlit Cloud)
+Steps:
+
+Push code to GitHub
+
+Go to https://cineverserecommender.streamlit.app
+
+Select your repo
+
+Add API key in Secrets
+
+Deploy
+
 
 
 
