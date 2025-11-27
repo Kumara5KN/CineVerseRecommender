@@ -91,7 +91,7 @@ Genre Section → TMDb API + Local Dataset → Movie Cards
 
 Movie Details Page → Full TMDb Movie Data → Cast, Crew, Trailer  
 
-⚙️ Installation
+⚙️ Installation<br>
 1️⃣ Clone repository
 git clone https://github.com/yourusername/ciniverse.git
 cd ciniverse
