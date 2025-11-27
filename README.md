@@ -43,4 +43,11 @@ information for the selected movie.
 The trailer preview section is visible here, embedding official YouTube trailers inside the
 CINIVERSE app.
 
+<p align="center">
+  <img src="assets/Screenshot1.png" width="45%">
+  <img src="assets/Screenshot2.png" width="45%">
+     <img src="assets/Screenshot2.png" width="45%">
+
+</p>
+
 
