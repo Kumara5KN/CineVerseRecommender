@@ -7,7 +7,7 @@ machine learning similarity algorithms, and the TMDb API. It provides personaliz
 recommendations, trending movies, genre-based exploration, and complete movie details including
 cast, crew, and trailers. The system features a premium cinematic UI designed with custom CSS
 animations, gradients, and responsive layouts.
-2. Key Features
+2. Key Features<br>
 • Smart movie recommendations using cosine similarity<br> • Trending movie section powered by TMDb
 API<br> • Genre-wise movie exploration<br> • Full movie details with trailer, cast, crew<br> • Interactive, premium UI
 with animations <br>• Mobile responsive and visually appealing design
