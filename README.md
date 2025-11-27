@@ -21,7 +21,7 @@ compute cosine similarity scores and identify the closest matches.
 subtitle, and search interface for selecting movies from the dataset.
 ![Home Page](assets/Screenshot1.png)
 
-Screenshot 2: This screenshot displays the 'Smart Recommendations' section. When a user selects a
+Screenshot 2:Movie Details Page<br> This screenshot displays the 'Smart Recommendations' section. When a user selects a
 movie, the system previews the movie details before generating recommendations.
 ![Movie Details](assets/Screenshot2.png)
 
