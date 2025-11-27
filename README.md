@@ -127,7 +127,7 @@ Browse trending movies
 Explore genres
 
 Watch trailer
-
+<p>--------------------------------------------------------------------------------------------</p>
 🌐 Deployment (Streamlit Cloud)
 Steps:
 
